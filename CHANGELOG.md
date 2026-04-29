@@ -8,6 +8,11 @@ CLI and engine versions are **decoupled** — see `CLAUDE.md` for details. Tags
 with a `-cli` suffix are CLI-only patches that reuse the previous engine
 binary.
 
+## [Unreleased]
+
+### Added
+- **`kesha-engine serve`** — long-lived TTS daemon. Reads line-delimited JSON requests on stdin and writes one response object per request on stdout, keeping a per-`model_dir` Vosk instance loaded across calls. Eliminates the ~30–60 s cold-load tax that dominates `kesha say` latency for repeated synthesis (Telegram bots, batch pipelines, voice-driven CLIs). Phase 1 is Vosk-RU only — Kokoro and AVSpeech return an explanatory `{"ok":false,"error":...}` so the daemon can be wired in incrementally; both engines already expose load-once / infer-many APIs internally, so adding them is plumbing-only follow-up. See `docs/tts.md` for the protocol.
+
 ## [1.5.0] — 2026-04-29
 
 First engine release since v1.4.1. Catches the binary up to the engine source
