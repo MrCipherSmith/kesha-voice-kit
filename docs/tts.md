@@ -58,3 +58,32 @@ kesha say --ssml --voice ru-vosk-m02 '<speak>Привет <break time="1s"/> м�
 | `<!DOCTYPE>` | ❌ rejected (hardening against XXE) |
 
 SSML is opt-in via the explicit `--ssml` flag — inputs that happen to contain `<angle brackets>` aren't misinterpreted as SSML.
+
+## Daemon mode (`serve`)
+
+Each `kesha say` invocation re-loads the Vosk model (~890 MB) and the BERT prosody encoder (~150 MB) — cold synthesis on x64 CPU runs 30–60 s for paragraph-length input. For repeated synthesis (Telegram bots, batch pipelines, voice-driven CLIs) that cold load dominates total latency by 5–10×.
+
+`kesha-engine serve` is a long-lived daemon that loads each model once and answers many requests:
+
+```bash
+kesha-engine serve <<'EOF'
+{"text":"Привет, мир.","voice":"ru-vosk-m02","out":"/tmp/hello.wav"}
+{"text":"Ещё один запрос.","voice":"ru-vosk-f01","rate":1.1,"out":"/tmp/two.wav"}
+EOF
+```
+
+Protocol — line-delimited JSON on stdin/stdout, one object per line. Required request fields: `text`, `voice`, `out`. Optional: `rate` (default `1.0`).
+
+Response — success:
+```json
+{"ok":true,"sample_rate":22050,"samples":132300,"wav_bytes":264644}
+```
+
+Response — error (the daemon stays running and continues accepting requests):
+```json
+{"ok":false,"error":"voice 'ru-zzz' not installed"}
+```
+
+On stdin EOF the daemon exits cleanly with code 0.
+
+**Phase 1 limitation:** Vosk-RU only. Kokoro and AVSpeech voices return `{"ok":false,...}` with an explanatory message — both engines already expose load-once / infer-many APIs internally, so wiring them into `serve` is plumbing-only follow-up. Until then, fall back to `kesha say --voice <id>` for non-Vosk voices.

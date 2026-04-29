@@ -64,6 +64,10 @@ enum Commands {
         #[arg(long)]
         vad: bool,
     },
+    /// Run a long-lived TTS daemon that loads models once and serves
+    /// JSON-line synthesis requests on stdin/stdout (phase 1: Vosk-RU only).
+    #[cfg(feature = "tts")]
+    Serve,
     /// Synthesize speech from text (TTS)
     #[cfg(feature = "tts")]
     Say {
@@ -315,6 +319,10 @@ fn main() -> Result<()> {
                 eprintln!("VAD model installed.");
             }
             eprintln!("Install complete.");
+        }
+        #[cfg(feature = "tts")]
+        Some(Commands::Serve) => {
+            std::process::exit(tts::serve::run());
         }
         #[cfg(feature = "tts")]
         Some(Commands::Say {
