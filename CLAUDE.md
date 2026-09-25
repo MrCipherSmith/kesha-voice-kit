@@ -427,3 +427,17 @@ Opt-in via `kesha install --tts` (downloads Kokoro + Vosk-TTS, ~990 MB). `macos-
 - macOS build env: `LIBCLANG_PATH=/Library/Developer/CommandLineTools/usr/lib`, `RUSTFLAGS="-L /opt/homebrew/lib"`.
 
 Original spec assumed Silero TTS; pivoted to Piper during M3 spike (Silero ships PyTorch-only, no public ONNX). See `docs/superpowers/specs/2026-04-16-bidirectional-voice-design.md`.
+
+## Claude-only rules
+
+These apply to Claude sessions in this repository, and are deliberately absent from
+`AGENTS.md`: an agent that reads only `AGENTS.md` must not load them.
+
+When writing a prompt, a sub-agent dispatch, a stopping rule, or when auditing existing
+instructions for patterns written against older models, read
+`rules/core/opus-5-5-prompting.mdc` first.
+
+The short form, so the common case needs no file read: Claude Opus 5.5 always reasons before
+replying, so never write `think carefully`, `think step by step` or `рассуждай пошагово` — state
+the completion criterion instead. Give a task its finish line rather than hand-written steps,
+unless a step encodes a real ordering constraint or gate.
